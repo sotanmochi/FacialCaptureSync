@@ -136,6 +136,12 @@
       },
       "url": "https://packages.unity.com"
     },
+    "jp.sotanmochi.facialcapturesync": {
+      "version": "file:FacialCaptureSync",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
     "com.unity.modules.ai": {
       "version": "1.0.0",
       "depth": 0,
