@@ -27,6 +27,7 @@ namespace FacialCaptureSync
 
         public event Action<FacialCapture> OnDataReceived;
 
+        public int Port => _captureSource.ReceiverPort;
         public bool IsRunning => _isRunning;
 
         public FacialCaptureReceiver(IFacialCaptureSource captureDataSource, int bufferSize = 4)
