@@ -12,7 +12,7 @@ namespace FacialCaptureSync
         private static readonly ProfilerMarker _tryParseProfilerMarker = new ProfilerMarker($"{nameof(Facemotion3d)}.TryParse");
 #endif
 
-        public bool TryParse(string payload, ref FacialCapture output)
+        public bool TryParse(string payload, bool flipHorizontal, ref FacialCapture output)
         {
 #if UNITY_2020_3_OR_NEWER && DEVELOPMENT_BUILD || UNITY_EDITOR
             _tryParseProfilerMarker.Begin();
@@ -66,7 +66,7 @@ namespace FacialCaptureSync
                     if (short.TryParse(blendShape.Slice(valueSeparationIndex + 1).ToString(), out var blendShapeValue))
     #endif
                     {
-                        var index = FacialCaptureUtility.GetBlendShapeIndex(blendShapeName.ToString());
+                        var index = FacialCaptureUtility.GetBlendShapeIndex(blendShapeName.ToString(), flipHorizontal);
                         if (index < 0) { continue; }
                         output._blendShapeValues[index] = blendShapeValue;
                         processedBlendShapeCount++;
@@ -97,11 +97,39 @@ namespace FacialCaptureSync
                     var boneName = bonePose.Slice(0, valueSeparationIndex);
                     var floatValues = bonePose.Slice(valueSeparationIndex + 1);
 
-                    var index = FacialCaptureUtility.GetBoneIndex(boneName.ToString());
+                    var index = FacialCaptureUtility.GetBoneIndex(boneName.ToString(), flipHorizontal);
                     if (index < 0) { continue; }
 
                     var processedValueCount = ParseUtility.ParseFloatValues(floatValues, delimiters[7], boneEulerAngles.Slice(3*index, 3));
                     processedPoseElementCount += processedValueCount;
+                }
+
+                if (flipHorizontal)
+                {
+                    var headYawIndex = (int)BoneName.head * 3 + 1;
+                    var headRollIndex = (int)BoneName.head * 3 + 2;
+                    boneEulerAngles[headYawIndex] = -boneEulerAngles[headYawIndex];
+                    boneEulerAngles[headRollIndex] = -boneEulerAngles[headRollIndex];
+
+                    var rightEyeYawIndex = (int)BoneName.rightEye * 3 + 1;
+                    var rightEyeRollIndex = (int)BoneName.rightEye * 3 + 2;
+                    boneEulerAngles[rightEyeYawIndex] = -boneEulerAngles[rightEyeYawIndex];
+                    boneEulerAngles[rightEyeRollIndex] = -boneEulerAngles[rightEyeRollIndex];
+
+                    var leftEyeYawIndex = (int)BoneName.leftEye * 3 + 1;
+                    var leftEyeRollIndex = (int)BoneName.leftEye * 3 + 2;
+                    boneEulerAngles[leftEyeYawIndex] = -boneEulerAngles[leftEyeYawIndex];
+                    boneEulerAngles[leftEyeRollIndex] = -boneEulerAngles[leftEyeRollIndex];
+
+                    var neckYawIndex = (int)BoneName.neck * 3 + 1;
+                    var neckRollIndex = (int)BoneName.neck * 3 + 2;
+                    boneEulerAngles[neckYawIndex] = -boneEulerAngles[neckYawIndex];
+                    boneEulerAngles[neckRollIndex] = -boneEulerAngles[neckRollIndex];
+
+                    var spineYawIndex = (int)BoneName.spine * 3 + 1;
+                    var spineRollIndex = (int)BoneName.spine * 3 + 2;
+                    boneEulerAngles[spineYawIndex] = -boneEulerAngles[spineYawIndex];
+                    boneEulerAngles[spineRollIndex] = -boneEulerAngles[spineRollIndex];
                 }
             }
 

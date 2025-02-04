@@ -16,6 +16,6 @@ namespace FacialCaptureSync
         public int BoneCount { get; }
         public int BoneEulerAngleCount { get; }
 
-        bool TryParse(string payload, ref FacialCapture output);
+        bool TryParse(string payload, bool flipHorizontal, ref FacialCapture output);
     }
 }

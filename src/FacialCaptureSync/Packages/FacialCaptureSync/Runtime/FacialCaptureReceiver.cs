@@ -29,6 +29,7 @@ namespace FacialCaptureSync
 
         public int Port => _captureSource.ReceiverPort;
         public bool IsRunning => _isRunning;
+        public bool FlipHorizontal { get; set; }
 
         public FacialCaptureReceiver(IFacialCaptureSource captureDataSource, int bufferSize = 4)
         {
@@ -104,7 +105,7 @@ namespace FacialCaptureSync
             try
             {
                 var message = System.Text.Encoding.ASCII.GetString(data);
-                if (_captureSource.TryParse(message, ref _receivedDataBuffer))
+                if (_captureSource.TryParse(message, FlipHorizontal, ref _receivedDataBuffer))
                 {
                     OnDataReceived?.Invoke(_receivedDataBuffer);
                 }

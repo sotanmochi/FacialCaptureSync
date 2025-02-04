@@ -12,7 +12,7 @@ namespace FacialCaptureSync
         private static readonly ProfilerMarker _TryParseProfilerMarker = new ProfilerMarker($"{nameof(iFacialMocap)}.TryParse");
 #endif
 
-        public bool TryParse(string payload, ref FacialCapture output)
+        public bool TryParse(string payload, bool flipHorizontal, ref FacialCapture output)
         {
 #if UNITY_2020_3_OR_NEWER && DEVELOPMENT_BUILD || UNITY_EDITOR
             _TryParseProfilerMarker.Begin();
@@ -66,7 +66,7 @@ namespace FacialCaptureSync
                     if (short.TryParse(blendShape.Slice(valueSeparationIndex + 1).ToString(), out var blendShapeValue))
     #endif
                     {
-                        var index = GetBlendShapeIndex(blendShapeName.ToString());
+                        var index = GetBlendShapeIndex(blendShapeName.ToString(), flipHorizontal);
                         if (index < 0) { continue; }
                         output._blendShapeValues[index] = blendShapeValue;
                         processedBlendShapeCount++;
@@ -97,11 +97,29 @@ namespace FacialCaptureSync
                     var boneName = bonePose.Slice(0, valueSeparationIndex);
                     var floatValues = bonePose.Slice(valueSeparationIndex + 1);
 
-                    var index = FacialCaptureUtility.GetBoneIndex(boneName.ToString());
+                    var index = FacialCaptureUtility.GetBoneIndex(boneName.ToString(), flipHorizontal);
                     if (index < 0) { continue; }
 
                     var processedValueCount = ParseUtility.ParseFloatValues(floatValues, delimiters[7], boneEulerAngles.Slice(3*index, 3));
                     processedPoseElementCount += processedValueCount;
+                }
+
+                if (flipHorizontal)
+                {
+                    var headYawIndex = (int)BoneName.head * 3 + 1;
+                    var headRollIndex = (int)BoneName.head * 3 + 2;
+                    boneEulerAngles[headYawIndex] = -boneEulerAngles[headYawIndex];
+                    boneEulerAngles[headRollIndex] = -boneEulerAngles[headRollIndex];
+
+                    var rightEyeYawIndex = (int)BoneName.rightEye * 3 + 1;
+                    var rightEyeRollIndex = (int)BoneName.rightEye * 3 + 2;
+                    boneEulerAngles[rightEyeYawIndex] = -boneEulerAngles[rightEyeYawIndex];
+                    boneEulerAngles[rightEyeRollIndex] = -boneEulerAngles[rightEyeRollIndex];
+
+                    var leftEyeYawIndex = (int)BoneName.leftEye * 3 + 1;
+                    var leftEyeRollIndex = (int)BoneName.leftEye * 3 + 2;
+                    boneEulerAngles[leftEyeYawIndex] = -boneEulerAngles[leftEyeYawIndex];
+                    boneEulerAngles[leftEyeRollIndex] = -boneEulerAngles[leftEyeRollIndex];
                 }
             }
 
@@ -116,120 +134,241 @@ namespace FacialCaptureSync
             return true;
         }
 
-        private static int GetBlendShapeIndex(string blendShapeName)
+        private static int GetBlendShapeIndex(string blendShapeName, bool flipHorizontal)
         {
-            var index = blendShapeName switch
+            var index = -1;
+
+            if (flipHorizontal)
             {
-                // For direct receiver
-                nameof(InternalBlendShapeName.browDown_L)       => (int)InternalBlendShapeName.browDown_L,
-                nameof(InternalBlendShapeName.browDown_R)       => (int)InternalBlendShapeName.browDown_R,
-                nameof(InternalBlendShapeName.browInnerUp)      => (int)InternalBlendShapeName.browInnerUp,
-                nameof(InternalBlendShapeName.browOuterUp_L)    => (int)InternalBlendShapeName.browOuterUp_L,
-                nameof(InternalBlendShapeName.browOuterUp_R)    => (int)InternalBlendShapeName.browOuterUp_R,
-                nameof(InternalBlendShapeName.cheekPuff)        => (int)InternalBlendShapeName.cheekPuff,
-                nameof(InternalBlendShapeName.cheekSquint_L)    => (int)InternalBlendShapeName.cheekSquint_L,
-                nameof(InternalBlendShapeName.cheekSquint_R)    => (int)InternalBlendShapeName.cheekSquint_R,
-                nameof(InternalBlendShapeName.eyeBlink_L)       => (int)InternalBlendShapeName.eyeBlink_L,
-                nameof(InternalBlendShapeName.eyeBlink_R)       => (int)InternalBlendShapeName.eyeBlink_R,
-                nameof(InternalBlendShapeName.eyeLookDown_L)    => (int)InternalBlendShapeName.eyeLookDown_L,
-                nameof(InternalBlendShapeName.eyeLookDown_R)    => (int)InternalBlendShapeName.eyeLookDown_R,
-                nameof(InternalBlendShapeName.eyeLookIn_L)      => (int)InternalBlendShapeName.eyeLookIn_L,
-                nameof(InternalBlendShapeName.eyeLookIn_R)      => (int)InternalBlendShapeName.eyeLookIn_R,
-                nameof(InternalBlendShapeName.eyeLookOut_L)     => (int)InternalBlendShapeName.eyeLookOut_L,
-                nameof(InternalBlendShapeName.eyeLookOut_R)     => (int)InternalBlendShapeName.eyeLookOut_R,
-                nameof(InternalBlendShapeName.eyeLookUp_L)      => (int)InternalBlendShapeName.eyeLookUp_L,
-                nameof(InternalBlendShapeName.eyeLookUp_R)      => (int)InternalBlendShapeName.eyeLookUp_R,
-                nameof(InternalBlendShapeName.eyeSquint_L)      => (int)InternalBlendShapeName.eyeSquint_L,
-                nameof(InternalBlendShapeName.eyeSquint_R)      => (int)InternalBlendShapeName.eyeSquint_R,
-                nameof(InternalBlendShapeName.eyeWide_L)        => (int)InternalBlendShapeName.eyeWide_L,
-                nameof(InternalBlendShapeName.eyeWide_R)        => (int)InternalBlendShapeName.eyeWide_R,
-                nameof(InternalBlendShapeName.jawForward)       => (int)InternalBlendShapeName.jawForward,
-                nameof(InternalBlendShapeName.jawLeft)          => (int)InternalBlendShapeName.jawLeft,
-                nameof(InternalBlendShapeName.jawOpen)          => (int)InternalBlendShapeName.jawOpen,
-                nameof(InternalBlendShapeName.jawRight)         => (int)InternalBlendShapeName.jawRight,
-                nameof(InternalBlendShapeName.mouthClose)       => (int)InternalBlendShapeName.mouthClose,
-                nameof(InternalBlendShapeName.mouthDimple_L)    => (int)InternalBlendShapeName.mouthDimple_L,
-                nameof(InternalBlendShapeName.mouthDimple_R)    => (int)InternalBlendShapeName.mouthDimple_R,
-                nameof(InternalBlendShapeName.mouthFrown_L)     => (int)InternalBlendShapeName.mouthFrown_L,
-                nameof(InternalBlendShapeName.mouthFrown_R)     => (int)InternalBlendShapeName.mouthFrown_R,
-                nameof(InternalBlendShapeName.mouthFunnel)      => (int)InternalBlendShapeName.mouthFunnel,
-                nameof(InternalBlendShapeName.mouthLeft)        => (int)InternalBlendShapeName.mouthLeft,
-                nameof(InternalBlendShapeName.mouthLowerDown_L) => (int)InternalBlendShapeName.mouthLowerDown_L,
-                nameof(InternalBlendShapeName.mouthLowerDown_R) => (int)InternalBlendShapeName.mouthLowerDown_R,
-                nameof(InternalBlendShapeName.mouthPress_L)     => (int)InternalBlendShapeName.mouthPress_L,
-                nameof(InternalBlendShapeName.mouthPress_R)     => (int)InternalBlendShapeName.mouthPress_R,
-                nameof(InternalBlendShapeName.mouthPucker)      => (int)InternalBlendShapeName.mouthPucker,
-                nameof(InternalBlendShapeName.mouthRight)       => (int)InternalBlendShapeName.mouthRight,
-                nameof(InternalBlendShapeName.mouthRollLower)   => (int)InternalBlendShapeName.mouthRollLower,
-                nameof(InternalBlendShapeName.mouthRollUpper)   => (int)InternalBlendShapeName.mouthRollUpper,
-                nameof(InternalBlendShapeName.mouthShrugLower)  => (int)InternalBlendShapeName.mouthShrugLower,
-                nameof(InternalBlendShapeName.mouthShrugUpper)  => (int)InternalBlendShapeName.mouthShrugUpper,
-                nameof(InternalBlendShapeName.mouthSmile_L)     => (int)InternalBlendShapeName.mouthSmile_L,
-                nameof(InternalBlendShapeName.mouthSmile_R)     => (int)InternalBlendShapeName.mouthSmile_R,
-                nameof(InternalBlendShapeName.mouthStretch_L)   => (int)InternalBlendShapeName.mouthStretch_L,
-                nameof(InternalBlendShapeName.mouthStretch_R)   => (int)InternalBlendShapeName.mouthStretch_R,
-                nameof(InternalBlendShapeName.mouthUpperUp_L)   => (int)InternalBlendShapeName.mouthUpperUp_L,
-                nameof(InternalBlendShapeName.mouthUpperUp_R)   => (int)InternalBlendShapeName.mouthUpperUp_R,
-                nameof(InternalBlendShapeName.noseSneer_L)      => (int)InternalBlendShapeName.noseSneer_L,
-                nameof(InternalBlendShapeName.noseSneer_R)      => (int)InternalBlendShapeName.noseSneer_R,
-                nameof(InternalBlendShapeName.tongueOut)        => (int)InternalBlendShapeName.tongueOut,
+                index = blendShapeName switch
+                {
+                    // For direct receiver
+                    nameof(InternalBlendShapeName.browDown_L)       => (int)InternalBlendShapeName.browDown_R,
+                    nameof(InternalBlendShapeName.browDown_R)       => (int)InternalBlendShapeName.browDown_L,
+                    nameof(InternalBlendShapeName.browInnerUp)      => (int)InternalBlendShapeName.browInnerUp,
+                    nameof(InternalBlendShapeName.browOuterUp_L)    => (int)InternalBlendShapeName.browOuterUp_R,
+                    nameof(InternalBlendShapeName.browOuterUp_R)    => (int)InternalBlendShapeName.browOuterUp_L,
+                    nameof(InternalBlendShapeName.cheekPuff)        => (int)InternalBlendShapeName.cheekPuff,
+                    nameof(InternalBlendShapeName.cheekSquint_L)    => (int)InternalBlendShapeName.cheekSquint_R,
+                    nameof(InternalBlendShapeName.cheekSquint_R)    => (int)InternalBlendShapeName.cheekSquint_L,
+                    nameof(InternalBlendShapeName.eyeBlink_L)       => (int)InternalBlendShapeName.eyeBlink_R,
+                    nameof(InternalBlendShapeName.eyeBlink_R)       => (int)InternalBlendShapeName.eyeBlink_L,
+                    nameof(InternalBlendShapeName.eyeLookDown_L)    => (int)InternalBlendShapeName.eyeLookDown_R,
+                    nameof(InternalBlendShapeName.eyeLookDown_R)    => (int)InternalBlendShapeName.eyeLookDown_L,
+                    nameof(InternalBlendShapeName.eyeLookIn_L)      => (int)InternalBlendShapeName.eyeLookIn_R,
+                    nameof(InternalBlendShapeName.eyeLookIn_R)      => (int)InternalBlendShapeName.eyeLookIn_L,
+                    nameof(InternalBlendShapeName.eyeLookOut_L)     => (int)InternalBlendShapeName.eyeLookOut_R,
+                    nameof(InternalBlendShapeName.eyeLookOut_R)     => (int)InternalBlendShapeName.eyeLookOut_L,
+                    nameof(InternalBlendShapeName.eyeLookUp_L)      => (int)InternalBlendShapeName.eyeLookUp_R,
+                    nameof(InternalBlendShapeName.eyeLookUp_R)      => (int)InternalBlendShapeName.eyeLookUp_L,
+                    nameof(InternalBlendShapeName.eyeSquint_L)      => (int)InternalBlendShapeName.eyeSquint_R,
+                    nameof(InternalBlendShapeName.eyeSquint_R)      => (int)InternalBlendShapeName.eyeSquint_L,
+                    nameof(InternalBlendShapeName.eyeWide_L)        => (int)InternalBlendShapeName.eyeWide_R,
+                    nameof(InternalBlendShapeName.eyeWide_R)        => (int)InternalBlendShapeName.eyeWide_L,
+                    nameof(InternalBlendShapeName.jawForward)       => (int)InternalBlendShapeName.jawForward,
+                    nameof(InternalBlendShapeName.jawLeft)          => (int)InternalBlendShapeName.jawRight,
+                    nameof(InternalBlendShapeName.jawOpen)          => (int)InternalBlendShapeName.jawOpen,
+                    nameof(InternalBlendShapeName.jawRight)         => (int)InternalBlendShapeName.jawLeft,
+                    nameof(InternalBlendShapeName.mouthClose)       => (int)InternalBlendShapeName.mouthClose,
+                    nameof(InternalBlendShapeName.mouthDimple_L)    => (int)InternalBlendShapeName.mouthDimple_R,
+                    nameof(InternalBlendShapeName.mouthDimple_R)    => (int)InternalBlendShapeName.mouthDimple_L,
+                    nameof(InternalBlendShapeName.mouthFrown_L)     => (int)InternalBlendShapeName.mouthFrown_R,
+                    nameof(InternalBlendShapeName.mouthFrown_R)     => (int)InternalBlendShapeName.mouthFrown_L,
+                    nameof(InternalBlendShapeName.mouthFunnel)      => (int)InternalBlendShapeName.mouthFunnel,
+                    nameof(InternalBlendShapeName.mouthLeft)        => (int)InternalBlendShapeName.mouthRight,
+                    nameof(InternalBlendShapeName.mouthLowerDown_L) => (int)InternalBlendShapeName.mouthLowerDown_R,
+                    nameof(InternalBlendShapeName.mouthLowerDown_R) => (int)InternalBlendShapeName.mouthLowerDown_L,
+                    nameof(InternalBlendShapeName.mouthPress_L)     => (int)InternalBlendShapeName.mouthPress_R,
+                    nameof(InternalBlendShapeName.mouthPress_R)     => (int)InternalBlendShapeName.mouthPress_L,
+                    nameof(InternalBlendShapeName.mouthPucker)      => (int)InternalBlendShapeName.mouthPucker,
+                    nameof(InternalBlendShapeName.mouthRight)       => (int)InternalBlendShapeName.mouthLeft,
+                    nameof(InternalBlendShapeName.mouthRollLower)   => (int)InternalBlendShapeName.mouthRollLower,
+                    nameof(InternalBlendShapeName.mouthRollUpper)   => (int)InternalBlendShapeName.mouthRollUpper,
+                    nameof(InternalBlendShapeName.mouthShrugLower)  => (int)InternalBlendShapeName.mouthShrugLower,
+                    nameof(InternalBlendShapeName.mouthShrugUpper)  => (int)InternalBlendShapeName.mouthShrugUpper,
+                    nameof(InternalBlendShapeName.mouthSmile_L)     => (int)InternalBlendShapeName.mouthSmile_R,
+                    nameof(InternalBlendShapeName.mouthSmile_R)     => (int)InternalBlendShapeName.mouthSmile_L,
+                    nameof(InternalBlendShapeName.mouthStretch_L)   => (int)InternalBlendShapeName.mouthStretch_R,
+                    nameof(InternalBlendShapeName.mouthStretch_R)   => (int)InternalBlendShapeName.mouthStretch_L,
+                    nameof(InternalBlendShapeName.mouthUpperUp_L)   => (int)InternalBlendShapeName.mouthUpperUp_R,
+                    nameof(InternalBlendShapeName.mouthUpperUp_R)   => (int)InternalBlendShapeName.mouthUpperUp_L,
+                    nameof(InternalBlendShapeName.noseSneer_L)      => (int)InternalBlendShapeName.noseSneer_R,
+                    nameof(InternalBlendShapeName.noseSneer_R)      => (int)InternalBlendShapeName.noseSneer_L,
+                    nameof(InternalBlendShapeName.tongueOut)        => (int)InternalBlendShapeName.tongueOut,
 
-                // For indirect receiver
-                nameof(BlendShapeNameInCamelCase.browDownLeft)        => (int)BlendShapeNameInCamelCase.browDownLeft,
-                nameof(BlendShapeNameInCamelCase.browDownRight)       => (int)BlendShapeNameInCamelCase.browDownRight,
-                // nameof(BlendShapeNameInCamelCase.browInnerUp)         => (int)BlendShapeNameInCamelCase.browInnerUp,
-                nameof(BlendShapeNameInCamelCase.browOuterUpLeft)     => (int)BlendShapeNameInCamelCase.browOuterUpLeft,
-                nameof(BlendShapeNameInCamelCase.browOuterUpRight)    => (int)BlendShapeNameInCamelCase.browOuterUpRight,
-                // nameof(BlendShapeNameInCamelCase.cheekPuff)           => (int)BlendShapeNameInCamelCase.cheekPuff,
-                nameof(BlendShapeNameInCamelCase.cheekSquintLeft)     => (int)BlendShapeNameInCamelCase.cheekSquintLeft,
-                nameof(BlendShapeNameInCamelCase.cheekSquintRight)    => (int)BlendShapeNameInCamelCase.cheekSquintRight,
-                nameof(BlendShapeNameInCamelCase.eyeBlinkLeft)        => (int)BlendShapeNameInCamelCase.eyeBlinkLeft,
-                nameof(BlendShapeNameInCamelCase.eyeBlinkRight)       => (int)BlendShapeNameInCamelCase.eyeBlinkRight,
-                nameof(BlendShapeNameInCamelCase.eyeLookDownLeft)     => (int)BlendShapeNameInCamelCase.eyeLookDownLeft,
-                nameof(BlendShapeNameInCamelCase.eyeLookDownRight)    => (int)BlendShapeNameInCamelCase.eyeLookDownRight,
-                nameof(BlendShapeNameInCamelCase.eyeLookInLeft)       => (int)BlendShapeNameInCamelCase.eyeLookInLeft,
-                nameof(BlendShapeNameInCamelCase.eyeLookInRight)      => (int)BlendShapeNameInCamelCase.eyeLookInRight,
-                nameof(BlendShapeNameInCamelCase.eyeLookOutLeft)      => (int)BlendShapeNameInCamelCase.eyeLookOutLeft,
-                nameof(BlendShapeNameInCamelCase.eyeLookOutRight)     => (int)BlendShapeNameInCamelCase.eyeLookOutRight,
-                nameof(BlendShapeNameInCamelCase.eyeLookUpLeft)       => (int)BlendShapeNameInCamelCase.eyeLookUpLeft,
-                nameof(BlendShapeNameInCamelCase.eyeLookUpRight)      => (int)BlendShapeNameInCamelCase.eyeLookUpRight,
-                nameof(BlendShapeNameInCamelCase.eyeSquintLeft)       => (int)BlendShapeNameInCamelCase.eyeSquintLeft,
-                nameof(BlendShapeNameInCamelCase.eyeSquintRight)      => (int)BlendShapeNameInCamelCase.eyeSquintRight,
-                nameof(BlendShapeNameInCamelCase.eyeWideLeft)         => (int)BlendShapeNameInCamelCase.eyeWideLeft,
-                nameof(BlendShapeNameInCamelCase.eyeWideRight)        => (int)BlendShapeNameInCamelCase.eyeWideRight,
-                // nameof(BlendShapeNameInCamelCase.jawForward)          => (int)BlendShapeNameInCamelCase.jawForward,
-                // nameof(BlendShapeNameInCamelCase.jawLeft)             => (int)BlendShapeNameInCamelCase.jawLeft,
-                // nameof(BlendShapeNameInCamelCase.jawOpen)             => (int)BlendShapeNameInCamelCase.jawOpen,
-                // nameof(BlendShapeNameInCamelCase.jawRight)            => (int)BlendShapeNameInCamelCase.jawRight,
-                // nameof(BlendShapeNameInCamelCase.mouthClose)          => (int)BlendShapeNameInCamelCase.mouthClose,
-                nameof(BlendShapeNameInCamelCase.mouthDimpleLeft)     => (int)BlendShapeNameInCamelCase.mouthDimpleLeft,
-                nameof(BlendShapeNameInCamelCase.mouthDimpleRight)    => (int)BlendShapeNameInCamelCase.mouthDimpleRight,
-                nameof(BlendShapeNameInCamelCase.mouthFrownLeft)      => (int)BlendShapeNameInCamelCase.mouthFrownLeft,
-                nameof(BlendShapeNameInCamelCase.mouthFrownRight)     => (int)BlendShapeNameInCamelCase.mouthFrownRight,
-                // nameof(BlendShapeNameInCamelCase.mouthFunnel)         => (int)BlendShapeNameInCamelCase.mouthFunnel,
-                // nameof(BlendShapeNameInCamelCase.mouthLeft)           => (int)BlendShapeNameInCamelCase.mouthLeft,
-                nameof(BlendShapeNameInCamelCase.mouthLowerDownLeft)  => (int)BlendShapeNameInCamelCase.mouthLowerDownLeft,
-                nameof(BlendShapeNameInCamelCase.mouthLowerDownRight) => (int)BlendShapeNameInCamelCase.mouthLowerDownRight,
-                nameof(BlendShapeNameInCamelCase.mouthPressLeft)      => (int)BlendShapeNameInCamelCase.mouthPressLeft,
-                nameof(BlendShapeNameInCamelCase.mouthPressRight)     => (int)BlendShapeNameInCamelCase.mouthPressRight,
-                // nameof(BlendShapeNameInCamelCase.mouthPucker)         => (int)BlendShapeNameInCamelCase.mouthPucker,
-                // nameof(BlendShapeNameInCamelCase.mouthRight)          => (int)BlendShapeNameInCamelCase.mouthRight,
-                // nameof(BlendShapeNameInCamelCase.mouthRollLower)      => (int)BlendShapeNameInCamelCase.mouthRollLower,
-                // nameof(BlendShapeNameInCamelCase.mouthRollUpper)      => (int)BlendShapeNameInCamelCase.mouthRollUpper,
-                // nameof(BlendShapeNameInCamelCase.mouthShrugLower)     => (int)BlendShapeNameInCamelCase.mouthShrugLower,
-                // nameof(BlendShapeNameInCamelCase.mouthShrugUpper)     => (int)BlendShapeNameInCamelCase.mouthShrugUpper,
-                nameof(BlendShapeNameInCamelCase.mouthSmileLeft)      => (int)BlendShapeNameInCamelCase.mouthSmileLeft,
-                nameof(BlendShapeNameInCamelCase.mouthSmileRight)     => (int)BlendShapeNameInCamelCase.mouthSmileRight,
-                nameof(BlendShapeNameInCamelCase.mouthStretchLeft)    => (int)BlendShapeNameInCamelCase.mouthStretchLeft,
-                nameof(BlendShapeNameInCamelCase.mouthStretchRight)   => (int)BlendShapeNameInCamelCase.mouthStretchRight,
-                nameof(BlendShapeNameInCamelCase.mouthUpperUpLeft)    => (int)BlendShapeNameInCamelCase.mouthUpperUpLeft,
-                nameof(BlendShapeNameInCamelCase.mouthUpperUpRight)   => (int)BlendShapeNameInCamelCase.mouthUpperUpRight,
-                nameof(BlendShapeNameInCamelCase.noseSneerLeft)       => (int)BlendShapeNameInCamelCase.noseSneerLeft,
-                nameof(BlendShapeNameInCamelCase.noseSneerRight)      => (int)BlendShapeNameInCamelCase.noseSneerRight,
-                // nameof(BlendShapeNameInCamelCase.tongueOut)           => (int)BlendShapeNameInCamelCase.tongueOut,
+                    // For indirect receiver
+                    nameof(BlendShapeNameInCamelCase.browDownLeft)        => (int)BlendShapeNameInCamelCase.browDownRight,
+                    nameof(BlendShapeNameInCamelCase.browDownRight)       => (int)BlendShapeNameInCamelCase.browDownLeft,
+                    // nameof(BlendShapeNameInCamelCase.browInnerUp)         => (int)BlendShapeNameInCamelCase.browInnerUp,
+                    nameof(BlendShapeNameInCamelCase.browOuterUpLeft)     => (int)BlendShapeNameInCamelCase.browOuterUpRight,
+                    nameof(BlendShapeNameInCamelCase.browOuterUpRight)    => (int)BlendShapeNameInCamelCase.browOuterUpLeft,
+                    // nameof(BlendShapeNameInCamelCase.cheekPuff)           => (int)BlendShapeNameInCamelCase.cheekPuff,
+                    nameof(BlendShapeNameInCamelCase.cheekSquintLeft)     => (int)BlendShapeNameInCamelCase.cheekSquintRight,
+                    nameof(BlendShapeNameInCamelCase.cheekSquintRight)    => (int)BlendShapeNameInCamelCase.cheekSquintLeft,
+                    nameof(BlendShapeNameInCamelCase.eyeBlinkLeft)        => (int)BlendShapeNameInCamelCase.eyeBlinkRight,
+                    nameof(BlendShapeNameInCamelCase.eyeBlinkRight)       => (int)BlendShapeNameInCamelCase.eyeBlinkLeft,
+                    nameof(BlendShapeNameInCamelCase.eyeLookDownLeft)     => (int)BlendShapeNameInCamelCase.eyeLookDownRight,
+                    nameof(BlendShapeNameInCamelCase.eyeLookDownRight)    => (int)BlendShapeNameInCamelCase.eyeLookDownLeft,
+                    nameof(BlendShapeNameInCamelCase.eyeLookInLeft)       => (int)BlendShapeNameInCamelCase.eyeLookInRight,
+                    nameof(BlendShapeNameInCamelCase.eyeLookInRight)      => (int)BlendShapeNameInCamelCase.eyeLookInLeft,
+                    nameof(BlendShapeNameInCamelCase.eyeLookOutLeft)      => (int)BlendShapeNameInCamelCase.eyeLookOutRight,
+                    nameof(BlendShapeNameInCamelCase.eyeLookOutRight)     => (int)BlendShapeNameInCamelCase.eyeLookOutLeft,
+                    nameof(BlendShapeNameInCamelCase.eyeLookUpLeft)       => (int)BlendShapeNameInCamelCase.eyeLookUpRight,
+                    nameof(BlendShapeNameInCamelCase.eyeLookUpRight)      => (int)BlendShapeNameInCamelCase.eyeLookUpLeft,
+                    nameof(BlendShapeNameInCamelCase.eyeSquintLeft)       => (int)BlendShapeNameInCamelCase.eyeSquintRight,
+                    nameof(BlendShapeNameInCamelCase.eyeSquintRight)      => (int)BlendShapeNameInCamelCase.eyeSquintLeft,
+                    nameof(BlendShapeNameInCamelCase.eyeWideLeft)         => (int)BlendShapeNameInCamelCase.eyeWideRight,
+                    nameof(BlendShapeNameInCamelCase.eyeWideRight)        => (int)BlendShapeNameInCamelCase.eyeWideLeft,
+                    // nameof(BlendShapeNameInCamelCase.jawForward)          => (int)BlendShapeNameInCamelCase.jawForward,
+                    // nameof(BlendShapeNameInCamelCase.jawLeft)             => (int)BlendShapeNameInCamelCase.jawRight,
+                    // nameof(BlendShapeNameInCamelCase.jawOpen)             => (int)BlendShapeNameInCamelCase.jawOpen,
+                    // nameof(BlendShapeNameInCamelCase.jawRight)            => (int)BlendShapeNameInCamelCase.jawLeft,
+                    // nameof(BlendShapeNameInCamelCase.mouthClose)          => (int)BlendShapeNameInCamelCase.mouthClose,
+                    nameof(BlendShapeNameInCamelCase.mouthDimpleLeft)     => (int)BlendShapeNameInCamelCase.mouthDimpleRight,
+                    nameof(BlendShapeNameInCamelCase.mouthDimpleRight)    => (int)BlendShapeNameInCamelCase.mouthDimpleLeft,
+                    nameof(BlendShapeNameInCamelCase.mouthFrownLeft)      => (int)BlendShapeNameInCamelCase.mouthFrownRight,
+                    nameof(BlendShapeNameInCamelCase.mouthFrownRight)     => (int)BlendShapeNameInCamelCase.mouthFrownLeft,
+                    // nameof(BlendShapeNameInCamelCase.mouthFunnel)         => (int)BlendShapeNameInCamelCase.mouthFunnel,
+                    // nameof(BlendShapeNameInCamelCase.mouthLeft)           => (int)BlendShapeNameInCamelCase.mouthRight,
+                    nameof(BlendShapeNameInCamelCase.mouthLowerDownLeft)  => (int)BlendShapeNameInCamelCase.mouthLowerDownRight,
+                    nameof(BlendShapeNameInCamelCase.mouthLowerDownRight) => (int)BlendShapeNameInCamelCase.mouthLowerDownLeft,
+                    nameof(BlendShapeNameInCamelCase.mouthPressLeft)      => (int)BlendShapeNameInCamelCase.mouthPressRight,
+                    nameof(BlendShapeNameInCamelCase.mouthPressRight)     => (int)BlendShapeNameInCamelCase.mouthPressLeft,
+                    // nameof(BlendShapeNameInCamelCase.mouthPucker)         => (int)BlendShapeNameInCamelCase.mouthPucker,
+                    // nameof(BlendShapeNameInCamelCase.mouthRight)          => (int)BlendShapeNameInCamelCase.mouthLeft,
+                    // nameof(BlendShapeNameInCamelCase.mouthRollLower)      => (int)BlendShapeNameInCamelCase.mouthRollLower,
+                    // nameof(BlendShapeNameInCamelCase.mouthRollUpper)      => (int)BlendShapeNameInCamelCase.mouthRollUpper,
+                    // nameof(BlendShapeNameInCamelCase.mouthShrugLower)     => (int)BlendShapeNameInCamelCase.mouthShrugLower,
+                    // nameof(BlendShapeNameInCamelCase.mouthShrugUpper)     => (int)BlendShapeNameInCamelCase.mouthShrugUpper,
+                    nameof(BlendShapeNameInCamelCase.mouthSmileLeft)      => (int)BlendShapeNameInCamelCase.mouthSmileRight,
+                    nameof(BlendShapeNameInCamelCase.mouthSmileRight)     => (int)BlendShapeNameInCamelCase.mouthSmileLeft,
+                    nameof(BlendShapeNameInCamelCase.mouthStretchLeft)    => (int)BlendShapeNameInCamelCase.mouthStretchRight,
+                    nameof(BlendShapeNameInCamelCase.mouthStretchRight)   => (int)BlendShapeNameInCamelCase.mouthStretchLeft,
+                    nameof(BlendShapeNameInCamelCase.mouthUpperUpLeft)    => (int)BlendShapeNameInCamelCase.mouthUpperUpRight,
+                    nameof(BlendShapeNameInCamelCase.mouthUpperUpRight)   => (int)BlendShapeNameInCamelCase.mouthUpperUpLeft,
+                    nameof(BlendShapeNameInCamelCase.noseSneerLeft)       => (int)BlendShapeNameInCamelCase.noseSneerRight,
+                    nameof(BlendShapeNameInCamelCase.noseSneerRight)      => (int)BlendShapeNameInCamelCase.noseSneerLeft,
+                    // nameof(BlendShapeNameInCamelCase.tongueOut)           => (int)BlendShapeNameInCamelCase.tongueOut,
 
-                _ => -1,
-            };
+                    _ => -1,
+                };
+            }
+            else
+            {
+                index = blendShapeName switch
+                {
+                    // For direct receiver
+                    nameof(InternalBlendShapeName.browDown_L)       => (int)InternalBlendShapeName.browDown_L,
+                    nameof(InternalBlendShapeName.browDown_R)       => (int)InternalBlendShapeName.browDown_R,
+                    nameof(InternalBlendShapeName.browInnerUp)      => (int)InternalBlendShapeName.browInnerUp,
+                    nameof(InternalBlendShapeName.browOuterUp_L)    => (int)InternalBlendShapeName.browOuterUp_L,
+                    nameof(InternalBlendShapeName.browOuterUp_R)    => (int)InternalBlendShapeName.browOuterUp_R,
+                    nameof(InternalBlendShapeName.cheekPuff)        => (int)InternalBlendShapeName.cheekPuff,
+                    nameof(InternalBlendShapeName.cheekSquint_L)    => (int)InternalBlendShapeName.cheekSquint_L,
+                    nameof(InternalBlendShapeName.cheekSquint_R)    => (int)InternalBlendShapeName.cheekSquint_R,
+                    nameof(InternalBlendShapeName.eyeBlink_L)       => (int)InternalBlendShapeName.eyeBlink_L,
+                    nameof(InternalBlendShapeName.eyeBlink_R)       => (int)InternalBlendShapeName.eyeBlink_R,
+                    nameof(InternalBlendShapeName.eyeLookDown_L)    => (int)InternalBlendShapeName.eyeLookDown_L,
+                    nameof(InternalBlendShapeName.eyeLookDown_R)    => (int)InternalBlendShapeName.eyeLookDown_R,
+                    nameof(InternalBlendShapeName.eyeLookIn_L)      => (int)InternalBlendShapeName.eyeLookIn_L,
+                    nameof(InternalBlendShapeName.eyeLookIn_R)      => (int)InternalBlendShapeName.eyeLookIn_R,
+                    nameof(InternalBlendShapeName.eyeLookOut_L)     => (int)InternalBlendShapeName.eyeLookOut_L,
+                    nameof(InternalBlendShapeName.eyeLookOut_R)     => (int)InternalBlendShapeName.eyeLookOut_R,
+                    nameof(InternalBlendShapeName.eyeLookUp_L)      => (int)InternalBlendShapeName.eyeLookUp_L,
+                    nameof(InternalBlendShapeName.eyeLookUp_R)      => (int)InternalBlendShapeName.eyeLookUp_R,
+                    nameof(InternalBlendShapeName.eyeSquint_L)      => (int)InternalBlendShapeName.eyeSquint_L,
+                    nameof(InternalBlendShapeName.eyeSquint_R)      => (int)InternalBlendShapeName.eyeSquint_R,
+                    nameof(InternalBlendShapeName.eyeWide_L)        => (int)InternalBlendShapeName.eyeWide_L,
+                    nameof(InternalBlendShapeName.eyeWide_R)        => (int)InternalBlendShapeName.eyeWide_R,
+                    nameof(InternalBlendShapeName.jawForward)       => (int)InternalBlendShapeName.jawForward,
+                    nameof(InternalBlendShapeName.jawLeft)          => (int)InternalBlendShapeName.jawLeft,
+                    nameof(InternalBlendShapeName.jawOpen)          => (int)InternalBlendShapeName.jawOpen,
+                    nameof(InternalBlendShapeName.jawRight)         => (int)InternalBlendShapeName.jawRight,
+                    nameof(InternalBlendShapeName.mouthClose)       => (int)InternalBlendShapeName.mouthClose,
+                    nameof(InternalBlendShapeName.mouthDimple_L)    => (int)InternalBlendShapeName.mouthDimple_L,
+                    nameof(InternalBlendShapeName.mouthDimple_R)    => (int)InternalBlendShapeName.mouthDimple_R,
+                    nameof(InternalBlendShapeName.mouthFrown_L)     => (int)InternalBlendShapeName.mouthFrown_L,
+                    nameof(InternalBlendShapeName.mouthFrown_R)     => (int)InternalBlendShapeName.mouthFrown_R,
+                    nameof(InternalBlendShapeName.mouthFunnel)      => (int)InternalBlendShapeName.mouthFunnel,
+                    nameof(InternalBlendShapeName.mouthLeft)        => (int)InternalBlendShapeName.mouthLeft,
+                    nameof(InternalBlendShapeName.mouthLowerDown_L) => (int)InternalBlendShapeName.mouthLowerDown_L,
+                    nameof(InternalBlendShapeName.mouthLowerDown_R) => (int)InternalBlendShapeName.mouthLowerDown_R,
+                    nameof(InternalBlendShapeName.mouthPress_L)     => (int)InternalBlendShapeName.mouthPress_L,
+                    nameof(InternalBlendShapeName.mouthPress_R)     => (int)InternalBlendShapeName.mouthPress_R,
+                    nameof(InternalBlendShapeName.mouthPucker)      => (int)InternalBlendShapeName.mouthPucker,
+                    nameof(InternalBlendShapeName.mouthRight)       => (int)InternalBlendShapeName.mouthRight,
+                    nameof(InternalBlendShapeName.mouthRollLower)   => (int)InternalBlendShapeName.mouthRollLower,
+                    nameof(InternalBlendShapeName.mouthRollUpper)   => (int)InternalBlendShapeName.mouthRollUpper,
+                    nameof(InternalBlendShapeName.mouthShrugLower)  => (int)InternalBlendShapeName.mouthShrugLower,
+                    nameof(InternalBlendShapeName.mouthShrugUpper)  => (int)InternalBlendShapeName.mouthShrugUpper,
+                    nameof(InternalBlendShapeName.mouthSmile_L)     => (int)InternalBlendShapeName.mouthSmile_L,
+                    nameof(InternalBlendShapeName.mouthSmile_R)     => (int)InternalBlendShapeName.mouthSmile_R,
+                    nameof(InternalBlendShapeName.mouthStretch_L)   => (int)InternalBlendShapeName.mouthStretch_L,
+                    nameof(InternalBlendShapeName.mouthStretch_R)   => (int)InternalBlendShapeName.mouthStretch_R,
+                    nameof(InternalBlendShapeName.mouthUpperUp_L)   => (int)InternalBlendShapeName.mouthUpperUp_L,
+                    nameof(InternalBlendShapeName.mouthUpperUp_R)   => (int)InternalBlendShapeName.mouthUpperUp_R,
+                    nameof(InternalBlendShapeName.noseSneer_L)      => (int)InternalBlendShapeName.noseSneer_L,
+                    nameof(InternalBlendShapeName.noseSneer_R)      => (int)InternalBlendShapeName.noseSneer_R,
+                    nameof(InternalBlendShapeName.tongueOut)        => (int)InternalBlendShapeName.tongueOut,
+
+                    // For indirect receiver
+                    nameof(BlendShapeNameInCamelCase.browDownLeft)        => (int)BlendShapeNameInCamelCase.browDownLeft,
+                    nameof(BlendShapeNameInCamelCase.browDownRight)       => (int)BlendShapeNameInCamelCase.browDownRight,
+                    // nameof(BlendShapeNameInCamelCase.browInnerUp)         => (int)BlendShapeNameInCamelCase.browInnerUp,
+                    nameof(BlendShapeNameInCamelCase.browOuterUpLeft)     => (int)BlendShapeNameInCamelCase.browOuterUpLeft,
+                    nameof(BlendShapeNameInCamelCase.browOuterUpRight)    => (int)BlendShapeNameInCamelCase.browOuterUpRight,
+                    // nameof(BlendShapeNameInCamelCase.cheekPuff)           => (int)BlendShapeNameInCamelCase.cheekPuff,
+                    nameof(BlendShapeNameInCamelCase.cheekSquintLeft)     => (int)BlendShapeNameInCamelCase.cheekSquintLeft,
+                    nameof(BlendShapeNameInCamelCase.cheekSquintRight)    => (int)BlendShapeNameInCamelCase.cheekSquintRight,
+                    nameof(BlendShapeNameInCamelCase.eyeBlinkLeft)        => (int)BlendShapeNameInCamelCase.eyeBlinkLeft,
+                    nameof(BlendShapeNameInCamelCase.eyeBlinkRight)       => (int)BlendShapeNameInCamelCase.eyeBlinkRight,
+                    nameof(BlendShapeNameInCamelCase.eyeLookDownLeft)     => (int)BlendShapeNameInCamelCase.eyeLookDownLeft,
+                    nameof(BlendShapeNameInCamelCase.eyeLookDownRight)    => (int)BlendShapeNameInCamelCase.eyeLookDownRight,
+                    nameof(BlendShapeNameInCamelCase.eyeLookInLeft)       => (int)BlendShapeNameInCamelCase.eyeLookInLeft,
+                    nameof(BlendShapeNameInCamelCase.eyeLookInRight)      => (int)BlendShapeNameInCamelCase.eyeLookInRight,
+                    nameof(BlendShapeNameInCamelCase.eyeLookOutLeft)      => (int)BlendShapeNameInCamelCase.eyeLookOutLeft,
+                    nameof(BlendShapeNameInCamelCase.eyeLookOutRight)     => (int)BlendShapeNameInCamelCase.eyeLookOutRight,
+                    nameof(BlendShapeNameInCamelCase.eyeLookUpLeft)       => (int)BlendShapeNameInCamelCase.eyeLookUpLeft,
+                    nameof(BlendShapeNameInCamelCase.eyeLookUpRight)      => (int)BlendShapeNameInCamelCase.eyeLookUpRight,
+                    nameof(BlendShapeNameInCamelCase.eyeSquintLeft)       => (int)BlendShapeNameInCamelCase.eyeSquintLeft,
+                    nameof(BlendShapeNameInCamelCase.eyeSquintRight)      => (int)BlendShapeNameInCamelCase.eyeSquintRight,
+                    nameof(BlendShapeNameInCamelCase.eyeWideLeft)         => (int)BlendShapeNameInCamelCase.eyeWideLeft,
+                    nameof(BlendShapeNameInCamelCase.eyeWideRight)        => (int)BlendShapeNameInCamelCase.eyeWideRight,
+                    // nameof(BlendShapeNameInCamelCase.jawForward)          => (int)BlendShapeNameInCamelCase.jawForward,
+                    // nameof(BlendShapeNameInCamelCase.jawLeft)             => (int)BlendShapeNameInCamelCase.jawLeft,
+                    // nameof(BlendShapeNameInCamelCase.jawOpen)             => (int)BlendShapeNameInCamelCase.jawOpen,
+                    // nameof(BlendShapeNameInCamelCase.jawRight)            => (int)BlendShapeNameInCamelCase.jawRight,
+                    // nameof(BlendShapeNameInCamelCase.mouthClose)          => (int)BlendShapeNameInCamelCase.mouthClose,
+                    nameof(BlendShapeNameInCamelCase.mouthDimpleLeft)     => (int)BlendShapeNameInCamelCase.mouthDimpleLeft,
+                    nameof(BlendShapeNameInCamelCase.mouthDimpleRight)    => (int)BlendShapeNameInCamelCase.mouthDimpleRight,
+                    nameof(BlendShapeNameInCamelCase.mouthFrownLeft)      => (int)BlendShapeNameInCamelCase.mouthFrownLeft,
+                    nameof(BlendShapeNameInCamelCase.mouthFrownRight)     => (int)BlendShapeNameInCamelCase.mouthFrownRight,
+                    // nameof(BlendShapeNameInCamelCase.mouthFunnel)         => (int)BlendShapeNameInCamelCase.mouthFunnel,
+                    // nameof(BlendShapeNameInCamelCase.mouthLeft)           => (int)BlendShapeNameInCamelCase.mouthLeft,
+                    nameof(BlendShapeNameInCamelCase.mouthLowerDownLeft)  => (int)BlendShapeNameInCamelCase.mouthLowerDownLeft,
+                    nameof(BlendShapeNameInCamelCase.mouthLowerDownRight) => (int)BlendShapeNameInCamelCase.mouthLowerDownRight,
+                    nameof(BlendShapeNameInCamelCase.mouthPressLeft)      => (int)BlendShapeNameInCamelCase.mouthPressLeft,
+                    nameof(BlendShapeNameInCamelCase.mouthPressRight)     => (int)BlendShapeNameInCamelCase.mouthPressRight,
+                    // nameof(BlendShapeNameInCamelCase.mouthPucker)         => (int)BlendShapeNameInCamelCase.mouthPucker,
+                    // nameof(BlendShapeNameInCamelCase.mouthRight)          => (int)BlendShapeNameInCamelCase.mouthRight,
+                    // nameof(BlendShapeNameInCamelCase.mouthRollLower)      => (int)BlendShapeNameInCamelCase.mouthRollLower,
+                    // nameof(BlendShapeNameInCamelCase.mouthRollUpper)      => (int)BlendShapeNameInCamelCase.mouthRollUpper,
+                    // nameof(BlendShapeNameInCamelCase.mouthShrugLower)     => (int)BlendShapeNameInCamelCase.mouthShrugLower,
+                    // nameof(BlendShapeNameInCamelCase.mouthShrugUpper)     => (int)BlendShapeNameInCamelCase.mouthShrugUpper,
+                    nameof(BlendShapeNameInCamelCase.mouthSmileLeft)      => (int)BlendShapeNameInCamelCase.mouthSmileLeft,
+                    nameof(BlendShapeNameInCamelCase.mouthSmileRight)     => (int)BlendShapeNameInCamelCase.mouthSmileRight,
+                    nameof(BlendShapeNameInCamelCase.mouthStretchLeft)    => (int)BlendShapeNameInCamelCase.mouthStretchLeft,
+                    nameof(BlendShapeNameInCamelCase.mouthStretchRight)   => (int)BlendShapeNameInCamelCase.mouthStretchRight,
+                    nameof(BlendShapeNameInCamelCase.mouthUpperUpLeft)    => (int)BlendShapeNameInCamelCase.mouthUpperUpLeft,
+                    nameof(BlendShapeNameInCamelCase.mouthUpperUpRight)   => (int)BlendShapeNameInCamelCase.mouthUpperUpRight,
+                    nameof(BlendShapeNameInCamelCase.noseSneerLeft)       => (int)BlendShapeNameInCamelCase.noseSneerLeft,
+                    nameof(BlendShapeNameInCamelCase.noseSneerRight)      => (int)BlendShapeNameInCamelCase.noseSneerRight,
+                    // nameof(BlendShapeNameInCamelCase.tongueOut)           => (int)BlendShapeNameInCamelCase.tongueOut,
+
+                    _ => -1,
+                };
+            }
+
             return index;
         }
     }

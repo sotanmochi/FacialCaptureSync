@@ -11,8 +11,8 @@ namespace FacialCaptureSync.Tests
             var blendShapeNames = (BlendShapeName[])Enum.GetValues(typeof(BlendShapeName));
             foreach (var blendShapeName in blendShapeNames)
             {
-                var index1 = FacialCaptureUtility.GetBlendShapeIndex(blendShapeName);
-                var index2 = FacialCaptureUtility.GetBlendShapeIndex(blendShapeName.ToString());
+                var index1 = FacialCaptureUtility.GetBlendShapeIndex(blendShapeName, flipHorizontal: false);
+                var index2 = FacialCaptureUtility.GetBlendShapeIndex(blendShapeName.ToString(), flipHorizontal: false);
                 Assert.That(index1, Is.EqualTo(index2));
             }
         }
@@ -28,7 +28,7 @@ namespace FacialCaptureSync.Tests
                 capture.BlendShapeValues[i] = -1;
             }
 
-            var success = dataSource.TryParse(_payload_iFacialMocap, ref capture);
+            var success = dataSource.TryParse(_payload_iFacialMocap, flipHorizontal: false, ref capture);
             Assert.That(success, Is.EqualTo(true));
 
             for (int i = 0; i < capture.BlendShapeValues.Length; i++)
@@ -39,7 +39,7 @@ namespace FacialCaptureSync.Tests
             var blendShapeNames = (BlendShapeName[])Enum.GetValues(typeof(BlendShapeName));
             for (int i = 0; i < (int)BlendShapeName.BlendShapeCount; i++)
             {
-                var index = FacialCaptureUtility.GetBlendShapeIndex(blendShapeNames[i]);
+                var index = FacialCaptureUtility.GetBlendShapeIndex(blendShapeNames[i], flipHorizontal: false);
                 Assert.That(capture.BlendShapeValues[index], Is.EqualTo(index));
             }
 
@@ -58,9 +58,9 @@ namespace FacialCaptureSync.Tests
         }
 
         [Test]
-        public void ParseTest_iFacialMocap_IndirectConnection()
+        public void ParseTest_iFacialMocap_FlipHorizontal()
         {
-            var dataSource = new iFacialMocap(true);
+            var dataSource = new iFacialMocap();
 
             var capture = new FacialCapture();
             for (int i = 0; i < capture.BlendShapeValues.Length; i++)
@@ -68,7 +68,7 @@ namespace FacialCaptureSync.Tests
                 capture.BlendShapeValues[i] = -1;
             }
 
-            var success = dataSource.TryParse(_payload_iFacialMocap_IndirectConnection, ref capture);
+            var success = dataSource.TryParse(_payload_iFacialMocap_FlipHorizontal, flipHorizontal: true, ref capture);
             Assert.That(success, Is.EqualTo(true));
 
             for (int i = 0; i < capture.BlendShapeValues.Length; i++)
@@ -79,7 +79,34 @@ namespace FacialCaptureSync.Tests
             var blendShapeNames = (BlendShapeName[])Enum.GetValues(typeof(BlendShapeName));
             for (int i = 0; i < (int)BlendShapeName.BlendShapeCount; i++)
             {
-                var index = FacialCaptureUtility.GetBlendShapeIndex(blendShapeNames[i]);
+                var index = FacialCaptureUtility.GetBlendShapeIndex(blendShapeNames[i], flipHorizontal: true);
+                Assert.That(capture.BlendShapeValues[index], Is.EqualTo(index));
+            }
+        }
+
+        [Test]
+        public void ParseTest_iFacialMocap_IndirectConnection()
+        {
+            var dataSource = new iFacialMocap(true);
+
+            var capture = new FacialCapture();
+            for (int i = 0; i < capture.BlendShapeValues.Length; i++)
+            {
+                capture.BlendShapeValues[i] = -1;
+            }
+
+            var success = dataSource.TryParse(_payload_iFacialMocap_IndirectConnection, flipHorizontal: false, ref capture);
+            Assert.That(success, Is.EqualTo(true));
+
+            for (int i = 0; i < capture.BlendShapeValues.Length; i++)
+            {
+                Assert.That(capture.BlendShapeValues[i], Is.EqualTo(i));
+            }
+
+            var blendShapeNames = (BlendShapeName[])Enum.GetValues(typeof(BlendShapeName));
+            for (int i = 0; i < (int)BlendShapeName.BlendShapeCount; i++)
+            {
+                var index = FacialCaptureUtility.GetBlendShapeIndex(blendShapeNames[i], flipHorizontal: false);
                 Assert.That(capture.BlendShapeValues[index], Is.EqualTo(index));
             }
 
@@ -116,7 +143,7 @@ namespace FacialCaptureSync.Tests
                 capture.BlendShapeValues[i] = -1;
             }
 
-            var success = dataSource.TryParse(_payload_Facemotion3d, ref capture);
+            var success = dataSource.TryParse(_payload_Facemotion3d, flipHorizontal: false, ref capture);
             Assert.That(success, Is.EqualTo(true));
 
             for (int i = 0; i < capture.BlendShapeValues.Length; i++)
@@ -127,7 +154,7 @@ namespace FacialCaptureSync.Tests
             var blendShapeNames = (BlendShapeName[])Enum.GetValues(typeof(BlendShapeName));
             for (int i = 0; i < (int)BlendShapeName.BlendShapeCount; i++)
             {
-                var index = FacialCaptureUtility.GetBlendShapeIndex(blendShapeNames[i]);
+                var index = FacialCaptureUtility.GetBlendShapeIndex(blendShapeNames[i], flipHorizontal: false);
                 Assert.That(capture.BlendShapeValues[index], Is.EqualTo(index));
             }
 
@@ -153,15 +180,43 @@ namespace FacialCaptureSync.Tests
             Assert.That(capture.BoneEulerAngles[14], Is.EqualTo(-0.13524596f));
         }
 
+
+        [Test]
+        public void ParseTest_Facemotion3d_FlipHorizontal()
+        {
+            var dataSource = new Facemotion3d();
+
+            var capture = new FacialCapture();
+            for (int i = 0; i < capture.BlendShapeValues.Length; i++)
+            {
+                capture.BlendShapeValues[i] = -1;
+            }
+
+            var success = dataSource.TryParse(_payload_Facemotion3d_FlipHorizontal, flipHorizontal: true, ref capture);
+            Assert.That(success, Is.EqualTo(true));
+
+            for (int i = 0; i < capture.BlendShapeValues.Length; i++)
+            {
+                Assert.That(capture.BlendShapeValues[i], Is.EqualTo(i));
+            }
+
+            var blendShapeNames = (BlendShapeName[])Enum.GetValues(typeof(BlendShapeName));
+            for (int i = 0; i < (int)BlendShapeName.BlendShapeCount; i++)
+            {
+                var index = FacialCaptureUtility.GetBlendShapeIndex(blendShapeNames[i], flipHorizontal: true);
+                Assert.That(capture.BlendShapeValues[index], Is.EqualTo(index));
+            }
+        }
+
         [Test]
         public void ParseTest_PartialData_iFacialMocap()
         {
             var dataSource = new iFacialMocap();
             var payload = _payload_partial_iFacialMocap;
 
-            var index_browDown_L = FacialCaptureUtility.GetBlendShapeIndex(nameof(BlendShapeName.BrowDownLeft));
-            var index_mouthClose = FacialCaptureUtility.GetBlendShapeIndex(nameof(BlendShapeName.MouthClose));
-            var index_tongueOut = FacialCaptureUtility.GetBlendShapeIndex(nameof(BlendShapeName.TongueOut));
+            var index_browDown_L = FacialCaptureUtility.GetBlendShapeIndex(nameof(BlendShapeName.BrowDownLeft), flipHorizontal: false);
+            var index_mouthClose = FacialCaptureUtility.GetBlendShapeIndex(nameof(BlendShapeName.MouthClose), flipHorizontal: false);
+            var index_tongueOut = FacialCaptureUtility.GetBlendShapeIndex(nameof(BlendShapeName.TongueOut), flipHorizontal: false);
 
             Assert.That(index_browDown_L, Is.EqualTo(0));
             Assert.That(index_mouthClose, Is.EqualTo(26));
@@ -173,7 +228,7 @@ namespace FacialCaptureSync.Tests
                 capture.BlendShapeValues[i] = -1;
             }
 
-            var success = dataSource.TryParse(payload, ref capture);
+            var success = dataSource.TryParse(payload, flipHorizontal: false, ref capture);
             Assert.That(success, Is.EqualTo(true));
 
             Assert.That(capture.BlendShapeValues[index_browDown_L], Is.EqualTo(100));
@@ -202,9 +257,9 @@ namespace FacialCaptureSync.Tests
             var dataSource = new Facemotion3d();
             var payload = _payload_partial_Facemotion3d;
 
-            var index_browDown_L = FacialCaptureUtility.GetBlendShapeIndex(nameof(BlendShapeName.BrowDownLeft));
-            var index_mouthClose = FacialCaptureUtility.GetBlendShapeIndex(nameof(BlendShapeName.MouthClose));
-            var index_tongueOut = FacialCaptureUtility.GetBlendShapeIndex(nameof(BlendShapeName.TongueOut));
+            var index_browDown_L = FacialCaptureUtility.GetBlendShapeIndex(nameof(BlendShapeName.BrowDownLeft), flipHorizontal: false);
+            var index_mouthClose = FacialCaptureUtility.GetBlendShapeIndex(nameof(BlendShapeName.MouthClose), flipHorizontal: false);
+            var index_tongueOut = FacialCaptureUtility.GetBlendShapeIndex(nameof(BlendShapeName.TongueOut), flipHorizontal: false);
 
             Assert.That(index_browDown_L, Is.EqualTo(0));
             Assert.That(index_mouthClose, Is.EqualTo(26));
@@ -216,7 +271,7 @@ namespace FacialCaptureSync.Tests
                 capture.BlendShapeValues[i] = -1;
             }
 
-            var success = dataSource.TryParse(payload, ref capture);
+            var success = dataSource.TryParse(payload, flipHorizontal: false, ref capture);
             Assert.That(success, Is.EqualTo(true));
 
             Assert.That(capture.BlendShapeValues[index_browDown_L], Is.EqualTo(100));
@@ -244,10 +299,10 @@ namespace FacialCaptureSync.Tests
         {
             var capture = new FacialCapture();
 
-            var result1 = new iFacialMocap().TryParse(_payload_empty_error, ref capture);
+            var result1 = new iFacialMocap().TryParse(_payload_empty_error, flipHorizontal: false, ref capture);
             Assert.That(result1, Is.EqualTo(false));
 
-            var result2 = new Facemotion3d().TryParse(_payload_empty_error, ref capture);
+            var result2 = new Facemotion3d().TryParse(_payload_empty_error, flipHorizontal: false, ref capture);
             Assert.That(result2, Is.EqualTo(false));
         }
 
@@ -256,10 +311,10 @@ namespace FacialCaptureSync.Tests
         {
             var capture = new FacialCapture();
 
-            var result1 = new iFacialMocap().TryParse(_payload_first_delimiter_error, ref capture);
+            var result1 = new iFacialMocap().TryParse(_payload_first_delimiter_error, flipHorizontal: false, ref capture);
             Assert.That(result1, Is.EqualTo(false));
 
-            var result2 = new Facemotion3d().TryParse(_payload_first_delimiter_error, ref capture);
+            var result2 = new Facemotion3d().TryParse(_payload_first_delimiter_error, flipHorizontal: false, ref capture);
             Assert.That(result2, Is.EqualTo(false));
         }
 
@@ -268,10 +323,10 @@ namespace FacialCaptureSync.Tests
         {
             var capture = new FacialCapture();
 
-            var result1 = new iFacialMocap().TryParse(_payload_item_delimiter_error, ref capture);
+            var result1 = new iFacialMocap().TryParse(_payload_item_delimiter_error, flipHorizontal: false, ref capture);
             Assert.That(result1, Is.EqualTo(false));
 
-            var result2 = new Facemotion3d().TryParse(_payload_item_delimiter_error, ref capture);
+            var result2 = new Facemotion3d().TryParse(_payload_item_delimiter_error, flipHorizontal: false, ref capture);
             Assert.That(result2, Is.EqualTo(false));
         }
 
@@ -280,10 +335,10 @@ namespace FacialCaptureSync.Tests
         {
             var capture = new FacialCapture();
 
-            var result1 = new iFacialMocap().TryParse(_payload_value_delimiter_error, ref capture);
+            var result1 = new iFacialMocap().TryParse(_payload_value_delimiter_error, flipHorizontal: false, ref capture);
             Assert.That(result1, Is.EqualTo(false));
 
-            var result2 = new Facemotion3d().TryParse(_payload_value_delimiter_error, ref capture);
+            var result2 = new Facemotion3d().TryParse(_payload_value_delimiter_error, flipHorizontal: false, ref capture);
             Assert.That(result2, Is.EqualTo(false));
         }
 
@@ -353,6 +408,64 @@ namespace FacialCaptureSync.Tests
                                                         + "leftEye#6.034903,-1.6660284,-0.17520553|"
                                                         + "";
 
+        private readonly string _payload_iFacialMocap_FlipHorizontal  = "mouthSmile_R-43|"
+                                                        + "eyeLookOut_L-15|"
+                                                        + "mouthUpperUp_L-48|"
+                                                        + "eyeWide_R-20|"
+                                                        + "mouthClose-26|"
+                                                        + "mouthPucker-37|"
+                                                        + "mouthRollLower-39|"
+                                                        + "eyeBlink_R-8|"
+                                                        + "eyeLookDown_L-11|"
+                                                        + "cheekSquint_R-6|"
+                                                        + "eyeBlink_L-9|"
+                                                        + "tongueOut-51|"
+                                                        + "jawRight-23|"
+                                                        + "eyeLookIn_R-12|"
+                                                        + "cheekSquint_L-7|"
+                                                        + "mouthDimple_L-28|"
+                                                        + "mouthPress_L-36|"
+                                                        + "eyeSquint_L-19|"
+                                                        + "mouthRight-32|"
+                                                        + "mouthShrugLower-41|"
+                                                        + "eyeLookUp_R-16|"
+                                                        + "eyeLookOut_R-14|"
+                                                        + "mouthPress_R-35|"
+                                                        + "cheekPuff-5|"
+                                                        + "jawForward-22|"
+                                                        + "mouthLowerDown_L-34|"
+                                                        + "mouthFrown_L-30|"
+                                                        + "mouthShrugUpper-42|"
+                                                        + "browOuterUp_L-4|"
+                                                        + "browInnerUp-2|"
+                                                        + "mouthDimple_R-27|"
+                                                        + "browDown_R-0|"
+                                                        + "mouthUpperUp_R-47|"
+                                                        + "mouthRollUpper-40|"
+                                                        + "mouthFunnel-31|"
+                                                        + "mouthStretch_R-45|"
+                                                        + "mouthFrown_R-29|"
+                                                        + "eyeLookDown_R-10|"
+                                                        + "jawOpen-24|"
+                                                        + "jawLeft-25|"
+                                                        + "browDown_L-1|"
+                                                        + "mouthSmile_L-44|"
+                                                        + "noseSneer_R-49|"
+                                                        + "mouthLowerDown_R-33|"
+                                                        + "noseSneer_L-50|"
+                                                        + "eyeWide_L-21|"
+                                                        + "mouthStretch_L-46|"
+                                                        + "browOuterUp_R-3|"
+                                                        + "eyeLookIn_L-13|"
+                                                        + "eyeSquint_R-18|"
+                                                        + "eyeLookUp_L-17|"
+                                                        + "mouthLeft-38|"
+                                                        + "="
+                                                        + "head#-21.488958,-6.038993,-6.6019735,-0.030653415,-0.10287084,-0.6584072|"
+                                                        + "rightEye#6.0297494,2.4403017,0.25649446|"
+                                                        + "leftEye#6.034903,-1.6660284,-0.17520553|"
+                                                        + "";
+
         private readonly string _payload_iFacialMocap_IndirectConnection
                                                         = "faceObjGrp!SampleHead|"
                                                         + "mouthSmileRight-44|"
@@ -415,6 +528,7 @@ namespace FacialCaptureSync.Tests
                                                         + "neck#-4.59755,-2.6966295,-0.3155739,neckLower|"
                                                         + "spine#-1.9703788,-1.1556984,-0.13524596,objectName_is_not_specified|"
                                                         + "";
+
         private readonly string _payload_Facemotion3d = "faceObjGrp!SampleHead|"
                                                         + "blendShape1.mouthSmileRight&44|"
                                                         + "blendShape1.eyeLookOutLeft&14|"
@@ -468,6 +582,68 @@ namespace FacialCaptureSync.Tests
                                                         + "blendShape1.eyeSquintRight&19|"
                                                         + "blendShape1.eyeLookUpLeft&16|"
                                                         + "blendShape1.mouthLeft&32|"
+                                                        + "="
+                                                        + "headPosition#0.006986115,-0.043920115,0.0021677106,objectName_is_not_specified|"
+                                                        + "head#-6.567929,-3.8523278,-0.45081988,head|"
+                                                        + "rightEye#-5.039491,1.0846136,0.0,eyeBall_R|"
+                                                        + "leftEye#-5.0845714,0.75621915,0.0,eyeBall_L|"
+                                                        + "neck#-4.59755,-2.6966295,-0.3155739,neckLower|"
+                                                        + "spine#-1.9703788,-1.1556984,-0.13524596,objectName_is_not_specified|"
+                                                        + "";
+
+        private readonly string _payload_Facemotion3d_FlipHorizontal = "faceObjGrp!SampleHead|"
+                                                        + "blendShape1.mouthSmileRight&43|"
+                                                        + "blendShape1.eyeLookOutLeft&15|"
+                                                        + "blendShape1.mouthUpperUpLeft&48|"
+                                                        + "blendShape1.eyeWideRight&20|"
+                                                        + "blendShape1.mouthClose&26|"
+                                                        + "blendShape1.mouthPucker&37|"
+                                                        + "blendShape1.mouthRollLower&39|"
+                                                        + "blendShape1.eyeBlinkRight&8|"
+                                                        + "blendShape1.eyeLookDownLeft&11|"
+                                                        + "blendShape1.cheekSquintRight&6|"
+                                                        + "blendShape1.eyeBlinkLeft&9|"
+                                                        + "blendShape1.tongueOut&51|"
+                                                        + "blendShape1.jawRight&23|"
+                                                        + "blendShape1.eyeLookInRight&12|"
+                                                        + "blendShape1.cheekSquintLeft&7|"
+                                                        + "blendShape1.mouthDimpleLeft&28|"
+                                                        + "blendShape1.mouthPressLeft&36|"
+                                                        + "blendShape1.eyeSquintLeft&19|"
+                                                        + "blendShape1.mouthRight&32|"
+                                                        + "blendShape1.mouthShrugLower&41|"
+                                                        + "blendShape1.eyeLookUpRight&16|"
+                                                        + "blendShape1.eyeLookOutRight&14|"
+                                                        + "blendShape1.mouthPressRight&35|"
+                                                        + "blendShape1.cheekPuff&5|"
+                                                        + "blendShape1.jawForward&22|"
+                                                        + "blendShape1.mouthLowerDownLeft&34|"
+                                                        + "blendShape1.mouthFrownLeft&30|"
+                                                        + "blendShape1.mouthShrugUpper&42|"
+                                                        + "blendShape1.browOuterUpLeft&4|"
+                                                        + "blendShape1.browInnerUp&2|"
+                                                        + "blendShape1.mouthDimpleRight&27|"
+                                                        + "blendShape1.browDownRight&0|"
+                                                        + "blendShape1.mouthUpperUpRight&47|"
+                                                        + "blendShape1.mouthRollUpper&40|"
+                                                        + "blendShape1.mouthFunnel&31|"
+                                                        + "blendShape1.mouthStretchRight&45|"
+                                                        + "blendShape1.mouthFrownRight&29|"
+                                                        + "blendShape1.eyeLookDownRight&10|"
+                                                        + "blendShape1.jawOpen&24|"
+                                                        + "blendShape1.jawLeft&25|"
+                                                        + "blendShape1.browDownLeft&1|"
+                                                        + "blendShape1.mouthSmileLeft&44|"
+                                                        + "blendShape1.noseSneerRight&49|"
+                                                        + "blendShape1.mouthLowerDownRight&33|"
+                                                        + "blendShape1.noseSneerLeft&50|"
+                                                        + "blendShape1.eyeWideLeft&21|"
+                                                        + "blendShape1.mouthStretchLeft&46|"
+                                                        + "blendShape1.browOuterUpRight&3|"
+                                                        + "blendShape1.eyeLookInLeft&13|"
+                                                        + "blendShape1.eyeSquintRight&18|"
+                                                        + "blendShape1.eyeLookUpLeft&17|"
+                                                        + "blendShape1.mouthLeft&38|"
                                                         + "="
                                                         + "headPosition#0.006986115,-0.043920115,0.0021677106,objectName_is_not_specified|"
                                                         + "head#-6.567929,-3.8523278,-0.45081988,head|"

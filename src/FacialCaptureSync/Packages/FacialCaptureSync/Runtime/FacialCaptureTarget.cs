@@ -64,7 +64,7 @@ namespace FacialCaptureSync
                             blendShapeNameInMesh = $"{_blendShapePrefix}{_blendShapePrefixDelimiter}{blendShapeName}";
                         }
 
-                        var index = FacialCaptureUtility.GetBlendShapeIndex(blendShapeName);
+                        var index = FacialCaptureUtility.GetBlendShapeIndex(blendShapeName, flipHorizontal: false);
                         var blendShapeIndexInMesh = mesh.GetBlendShapeIndex(blendShapeNameInMesh);
 
                         if (index >= 0 && blendShapeIndexInMesh >= 0)
