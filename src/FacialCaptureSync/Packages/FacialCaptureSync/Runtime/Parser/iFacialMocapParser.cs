@@ -104,6 +104,26 @@ namespace FacialCaptureSync
                     processedPoseElementCount += processedValueCount;
                 }
 
+                // NOTE: When receiving data directly from the iOS app, the Euler angles for head and eye orientation are flipped horizontally,
+                // which results in an incorrect state. To correct this, invert the yaw and roll angles for both the head and eyes.
+                if (!_useIndirectConnection)
+                {
+                    var headYawIndex = (int)BoneName.head * 3 + 1;
+                    var headRollIndex = (int)BoneName.head * 3 + 2;
+                    boneEulerAngles[headYawIndex] = -boneEulerAngles[headYawIndex];
+                    boneEulerAngles[headRollIndex] = -boneEulerAngles[headRollIndex];
+
+                    var rightEyeYawIndex = (int)BoneName.rightEye * 3 + 1;
+                    var rightEyeRollIndex = (int)BoneName.rightEye * 3 + 2;
+                    boneEulerAngles[rightEyeYawIndex] = -boneEulerAngles[rightEyeYawIndex];
+                    boneEulerAngles[rightEyeRollIndex] = -boneEulerAngles[rightEyeRollIndex];
+
+                    var leftEyeYawIndex = (int)BoneName.leftEye * 3 + 1;
+                    var leftEyeRollIndex = (int)BoneName.leftEye * 3 + 2;
+                    boneEulerAngles[leftEyeYawIndex] = -boneEulerAngles[leftEyeYawIndex];
+                    boneEulerAngles[leftEyeRollIndex] = -boneEulerAngles[leftEyeRollIndex];
+                }
+
                 if (flipHorizontal)
                 {
                     var headYawIndex = (int)BoneName.head * 3 + 1;
