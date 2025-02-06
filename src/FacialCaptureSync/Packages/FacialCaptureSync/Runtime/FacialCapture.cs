@@ -1,5 +1,5 @@
 using System;
-
+using System.Numerics;
 #if UNITY_2020_3_OR_NEWER && DEVELOPMENT_BUILD || UNITY_EDITOR
 using Unity.Profiling;
 #endif
@@ -35,6 +35,24 @@ namespace FacialCaptureSync
 #if UNITY_2020_3_OR_NEWER && DEVELOPMENT_BUILD || UNITY_EDITOR
         private static readonly ProfilerMarker _CopyToProfilerMarker = new ProfilerMarker($"{nameof(FacialCapture)}.CopyTo");
 #endif
+
+        public Vector3 GetLeftEyeLocalEulerAngles()
+        {
+            var boneIndex = (int)BoneName.leftEye;
+            var x = _boneEulerAngles[3 * boneIndex + 0];
+            var y = _boneEulerAngles[3 * boneIndex + 1];
+            var z = _boneEulerAngles[3 * boneIndex + 2];
+            return new Vector3(x, y, z);
+        }
+
+        public Vector3 GetRightEyeLocalEulerAngles()
+        {
+            var boneIndex = (int)BoneName.rightEye;
+            var x = _boneEulerAngles[3 * boneIndex + 0];
+            var y = _boneEulerAngles[3 * boneIndex + 1];
+            var z = _boneEulerAngles[3 * boneIndex + 2];
+            return new Vector3(x, y, z);
+        }
 
         /// <summary>
         /// 
